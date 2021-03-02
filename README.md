@@ -1,5 +1,7 @@
 # Spectra Analyser
 
-Python scripts used for analyzing spectral data from Nano-Optics experiments performed at Universidade Federal de Pernambuco - Brazil
+Python scripts used to analyze data from spectroscopy measurements.
+Originally designed for Nano-Optics experiments performed at Universidade Federal de Pernambuco - Brazil
 
-A testing file is attached.
+Testing files with some spectra are attached.
+The extension of the files is .asc.
