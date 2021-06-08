@@ -62,10 +62,18 @@ class DecayCurve():
 
         return (self.time, intensity)
 
-    def plot_decay_curve(self, base_subplot=Plots.get_decay_baseplot(), normalized=False, v_lines = None, h_lines = None):
+    def plot_decay_curve(self, normalized=False, v_lines = None, h_lines = None):
         #Plots the decay curves. Returns the matplotlib object for any alterations, if necessary.
         #If normalized is True, intensity will be normalized to values between 0 and 1
-        fig, ax = base_subplot
+
+        #Setups for decay curves plots
+        fig, ax = plt.subplots()
+        ax.set_xlabel('Time [$\mu$s]', fontsize='x-large')
+        ax.set_ylabel('Counts [a.u]', fontsize='x-large')
+
+        ax.grid(which='both')
+        ax.tick_params(direction='in',which='both')
+
         time, intensity = self.get_decay_curve(normalized=normalized)
         ax.plot(time, intensity)
 
@@ -114,7 +122,14 @@ class DecayCurve():
         #Plots the decay curves corrected (dark counts subtracted +
         #   initial decay time set to zero)
 
-        fig, ax = Plots.get_decay_baseplot()
+        #Setups for decay curves plots
+        fig, ax = plt.subplots()
+        ax.set_xlabel('Time [$\mu$s]', fontsize='x-large')
+        ax.set_ylabel('Counts [a.u]', fontsize='x-large')
+
+        ax.grid(which='both')
+        ax.tick_params(direction='in',which='both')
+
         ax.plot(time, intensity)
         if fitting_curve != None:
             ax.plot(time, fitting_curve)
