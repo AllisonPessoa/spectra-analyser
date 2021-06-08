@@ -33,59 +33,11 @@ matplotlib.rcParams.update({'errorbar.capsize': 2})
 
 class Plots():
 # Standard plot setup class
-    @staticmethod
-    def get_spectrum_baseplot():
-        #Setups for spectrum plot
-        fig, ax = plt.subplots()
-        CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
-                          '#f781bf', '#a65628', '#984ea3',
-                          '#999999', '#e41a1c', '#dede00']
-        ax.set_prop_cycle(color=CB_color_cycle)
-        ax.set_ylabel('Intensity (a.u)', size='x-large')
-        ax.set_xlabel('Wavelength (nm)', size='x-large')
-        ax.grid(True)
-        ax.tick_params(direction='in',which='both')
-
-        return fig, ax
-
-    @staticmethod
-    def get_power_baseplot():
-        #Setups for power-law dependency plots
-        fig, ax = plt.subplots()
-        ax.set_xlabel('Power Excitation [W]', fontsize='x-large')
-        ax.set_ylabel('Signal Integral [a.u]', fontsize='x-large')
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        ax.grid(which='both')
-        ax.tick_params(direction='in',which='both')
-
-        return fig, ax
 
     @staticmethod
     def get_decay_baseplot():
-        #Setups for decay curves plots
-        fig, ax = plt.subplots()
-        ax.set_xlabel('Time [$\mu$s]', fontsize='x-large')
-        ax.set_ylabel('Counts [a.u]', fontsize='x-large')
-
-        ax.grid(which='both')
-        ax.tick_params(direction='in',which='both')
 
         return fig, ax
-
-    @staticmethod
-    def get_LIR_baseplot():
-        #Setups for decay curves plots
-        fig, ax = plt.subplots(constrained_layout=True)
-        ax.set_xlabel(r'1/T $(x10^{-3})$ $(\mathrm{K}^{-1})$', size='x-large')
-        ax.set_ylabel(r'$\ln(R)$', size='x-large')
-        ax.tick_params(direction='in',which='both')
-        ax.grid()
-        sec_y = ax.twinx()
-        sec_y.set_ylabel(r'$S_R (\%)$', size='x-large', color='b')
-        sec_y.tick_params(direction='in',which='both', colors='b')
-
-        return fig, ax, sec_y
 
 class Spectrum():
 # Contains all information about each individual spectrum
@@ -154,14 +106,24 @@ class Spectrum():
 
         return(area)
 
-    def plot_spectrum(self, base_subplot=Plots.get_spectrum_baseplot(), normalized=False):
+    def plot_spectrum(self, normalized=False):
         #Plots spectrum. There is a built-in plot style in class Plots. If nothing
         #               is passed as argument in base_subplot, it uses this standard
         #               You can modify the base_subplot object after, as you wish
         #If normalized is True, intensity will be normalized to values between 0 and 1
-        fig, ax = base_subplot
-
         wavelength, intensity = self.get_spectrum(normalized = normalized)
+
+        #Setups for spectrum plot
+        fig, ax = plt.subplots()
+        CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
+                          '#f781bf', '#a65628', '#984ea3',
+                          '#999999', '#e41a1c', '#dede00']
+        ax.set_prop_cycle(color=CB_color_cycle)
+        ax.set_ylabel('Intensity (a.u)', size='x-large')
+        ax.set_xlabel('Wavelength (nm)', size='x-large')
+        ax.grid(True)
+        ax.tick_params(direction='in',which='both')
+
         ax.plot(wavelength, intensity)
         ax.set_title(self.filename)
 
@@ -177,7 +139,7 @@ class PowerDependence():
         self.spectra_set = spectra_set
         self.power = power_set
 
-    def plot_power_dependence(self, integration_limits_dic, base_subplot=Plots.get_power_baseplot(), normalized=False):
+    def plot_power_dependence(self, integration_limits_dic, normalized=False):
         #Evaluates the linear fitting between Power and Intensity
         #Integration_limits_dic: Dictionary that defines two wavelength bands
         #                       to perform the LIR.
@@ -194,7 +156,19 @@ class PowerDependence():
         log_areas = np.log10(self.area_under_bands)
         log_power = np.log10(self.power)
 
-        fig, ax = base_subplot
+        #Setups for power-law dependency plots
+        fig, ax = plt.subplots()
+        ax.set_xlabel('Power Excitation [W]', fontsize='x-large')
+        ax.set_ylabel('Signal Integral [a.u]', fontsize='x-large')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.grid(which='both')
+        ax.tick_params(direction='in',which='both')
+
+        color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
+                          '#f781bf', '#a65628', '#984ea3',
+                          '#999999', '#e41a1c', '#dede00']
+        marker_cycle = ['o','v','*','d']
 
         for i in range(number_of_bands): #for each region of interation
             linear_fit, cov_matrix = np.polyfit(log_power, log_areas[i], 1,
@@ -203,17 +177,27 @@ class PowerDependence():
                             #Int = 10^Y = 10^(AX + B) = 10^(A*log(pot)+B)
             uncertainties = np.sqrt(np.diag(cov_matrix))
 
-            ax.plot(self.power, np.array(self.area_under_bands)[i], color = '#4aff00',
-                                marker = 'o', linestyle='None', label=list(integration_limits_dic.keys())[i])
-            ax.plot(self.power, fitting_line, color = '#4aff00', linestyle='--',
+            ax.plot(self.power, np.array(self.area_under_bands)[i], color = color_cycle[i],
+                                marker = marker_cycle[i], linestyle='None', label=list(integration_limits_dic.keys())[i])
+            ax.plot(self.power, fitting_line, color = color_cycle[i], linestyle='--',
                                 label = "Slope: {:.1f} \u00B1 {:.1}"
                                 .format(linear_fit[0], uncertainties[0])+" $[W^{-1}]$")
         ax.legend()
         return fig, ax
 
-    def plot_all_spectra(self, integration_limits, base_subplot=Plots.get_power_baseplot(), normalized=False):
+    def plot_all_spectra(self, integration_limits, normalized=False):
         #Plots all spectra in only one graph, with different collors, for comparison
-        fig, ax = base_subplot
+
+        #Setups for spectrum plot
+        fig, ax = plt.subplots()
+        CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
+                          '#f781bf', '#a65628', '#984ea3',
+                          '#999999', '#e41a1c', '#dede00']
+        ax.set_prop_cycle(color=CB_color_cycle)
+        ax.set_ylabel('Intensity (a.u)', size='x-large')
+        ax.set_xlabel('Wavelength (nm)', size='x-large')
+        ax.grid(True)
+        ax.tick_params(direction='in',which='both')
         for i in range(len(self.spectra_set)):
             wavelength, intensity = self.spectra_set[i].get_spectrum(normalized=normalized)
             ax.plot(wavelength,intensity, alpha=1-0.15*i,
@@ -221,7 +205,9 @@ class PowerDependence():
 
         for value in integration_limits:
             ax.axvline(value, ymax = 0.6, linestyle='--', color='black')
-        ax.legend()
+        #ax.legend()
+
+        return fig, ax
 
 class LIR():
 # Evaluates the LIR vs. Temperature dependence, and returns some thermometer parameters
@@ -271,13 +257,22 @@ class LIR():
             print("S_r:     \t {:.3f}".format(self.relative_sens[0]))
             print("DeltaT:  \t {:.3f}".format(self.deltaT[0]))
 
-    def Plot_spectra_maxmin(self, integration_limits_dic, base_subplot=Plots.get_spectrum_baseplot(), normalized = False):
+    def Plot_spectra_maxmin(self, integration_limits_dic, normalized = False):
         #PLots the maximum and mininum spectra, and also the integration limits used
         integration_limits = []
         for i in range(len(integration_limits_dic)):
             integration_limits += list(integration_limits_dic.values())[i]
 
-        fig, ax = base_subplot
+        #Setups for spectrum plot
+        fig, ax = plt.subplots()
+        CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
+                          '#f781bf', '#a65628', '#984ea3',
+                          '#999999', '#e41a1c', '#dede00']
+        ax.set_prop_cycle(color=CB_color_cycle)
+        ax.set_ylabel('Intensity (a.u)', size='x-large')
+        ax.set_xlabel('Wavelength (nm)', size='x-large')
+        ax.grid(True)
+        ax.tick_params(direction='in',which='both')
 
         wavelength, intensity_min_temp = self.spectra_set[0].get_spectrum(normalized=normalized)
         wavelength, intensity_max_temp = self.spectra_set[-1].get_spectrum(normalized=normalized)
@@ -293,9 +288,19 @@ class LIR():
 
         return fig,ax
 
-    def plot_LIR(self, base_subplot=Plots.get_LIR_baseplot()):
+    def plot_LIR(self):
         #Plots the dependence of the LIR with the temperature
-        fig, ax, sec_y = base_subplot
+
+        #Setups for decay curves plots
+        fig, ax = plt.subplots(constrained_layout=True)
+        ax.set_xlabel(r'1/T $(x10^{-3})$ $(\mathrm{K}^{-1})$', size='x-large')
+        ax.set_ylabel(r'$\ln(R)$', size='x-large')
+        ax.tick_params(direction='in',which='both')
+        ax.grid()
+        sec_y = ax.twinx()
+        sec_y.set_ylabel(r'$S_R (\%)$', size='x-large', color='b')
+        sec_y.tick_params(direction='in',which='both', colors='b')
+
         x_axis_scaled = [x*10**(3) for x in self.inverse_temperature]
         ax.scatter(x_axis_scaled, self.ln_LIR, color='000000')
         ax.plot(x_axis_scaled, self.linear_fitted_curve, color='000000')
